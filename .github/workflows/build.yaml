@@ -47,4 +47,5 @@ jobs:
       - name: Build APK
         run: |
           cd app/
+          buildozer init
           buildozer android debug
