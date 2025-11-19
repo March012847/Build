@@ -2,54 +2,50 @@ name: Build APK
 
 on:
   push:
-    branches:
-      - main  # triggers on pushes to main branch
+    branches: [main]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
-      # 1. Checkout repository
-      - name: Checkout repo
-        uses: actions/checkout@v3
+    - name: Checkout repo
+      uses: actions/checkout@v3
 
-      # 2. Setup Python
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.11
 
-      # 3. Cache Buildozer and SDK
-      - name: Cache Buildozer & Android SDK
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.buildozer
-            ~/.android
-          key: ${{ runner.os }}-buildozer-${{ hashFiles('**/buildozer.spec') }}
-          restore-keys: |
-            ${{ runner.os }}-buildozer-
+    - name: Install system packages
+      run: |
+        sudo apt update
+        sudo apt install -y python3-pip python3-setuptools git zip unzip openjdk-11-jdk libncurses6 libstdc++6 libffi-dev libssl-dev
+        pip install --upgrade pip
+        pip install buildozer cython
 
-      # 4. Install dependencies
-      - name: Install Buildozer & dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y python3-pip python3-setuptools git zip unzip openjdk-11-jdk \
-                    libncurses6 libstdc++6 libffi-dev libssl-dev
-          pip install --upgrade pip
-          pip install buildozer cython
+    - name: Install Android SDK & Build-Tools
+      run: |
+        ANDROID_SDK_ROOT=$HOME/Android/Sdk
+        mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+        cd $ANDROID_SDK_ROOT/cmdline-tools
+        wget https://dl.google.com/android/repository/commandlinetools-linux-101.9472044_latest.zip -O cmdline-tools.zip
+        unzip cmdline-tools.zip
+        rm cmdline-tools.zip
 
-      # 5. Build APK
-      - name: Build APK
-        run: |
-          cd app/
-          buildozer init
-          buildozer android debug
+        yes | $ANDROID_SDK_ROOT/cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses
+        $ANDROID_SDK_ROOT/cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-36" "build-tools;36.1.0"
 
-      # 6. Upload APK artifact
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: my-app-apk
-          path: bin/*.apk
+    - name: Build APK
+      run: |
+        export ANDROID_SDK_ROOT=$HOME/Android/Sdk
+        export PATH=$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
+        cd app/
+        buildozer init
+        buildozer android debug
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: MyApp-APK
+        path: bin/*.apk
