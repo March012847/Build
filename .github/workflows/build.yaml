@@ -36,7 +36,7 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y python3-pip python3-setuptools git zip unzip openjdk-11-jdk \
-                              libncurses5 libstdc++6 libffi-dev libssl-dev
+                    libncurses6 libstdc++6 libffi-dev libssl-dev
           pip install --upgrade pip
           pip install buildozer cython
 
