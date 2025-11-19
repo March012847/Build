@@ -1,4 +1,4 @@
-name: Build-apk
+name: Build APK
 
 on:
   push:
@@ -8,29 +8,41 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y python3-pip python3-setuptools git zip unzip openjdk-11-jdk libncurses6 libstdc++6 libffi-dev libssl-dev
+          sudo apt install -y python3-pip python3-setuptools git zip unzip openjdk-11-jdk \
+                              libncurses6 libstdc++6 libffi-dev libssl-dev wget
           pip install --upgrade cython buildozer
 
-      - name: Install SDK/NDK etc
+      - name: Setup Android SDK
         run: |
-          # Set Android SDK root
+          # Create SDK directories
+          mkdir -p $HOME/Android/Sdk/cmdline-tools
+          cd $HOME/Android/Sdk/cmdline-tools
+
+          # Download latest command-line tools
+          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
+          unzip cmdline-tools.zip
+          mv cmdline-tools latest
+
+          # Set environment variables
           export ANDROID_SDK_ROOT=$HOME/Android/Sdk
           export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
+          export PATH=$ANDROID_SDK_ROOT/platform-tools:$PATH
 
           # Accept licenses
-          yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses
+          yes | sdkmanager --licenses
 
-          # Install SDK components
-          sdkmanager --sdk_root=$ANDROID_SDK_ROOT \
-            "platform-tools" \
-            "platforms;android-33" \
-            "build-tools;33.0.0"
+          # Install essential SDK components
+          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0"
 
-      - name: Setting up and building
+      - name: Build APK
         run: |
           cd app/
           buildozer init
