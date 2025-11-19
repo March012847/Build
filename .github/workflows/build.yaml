@@ -43,6 +43,7 @@ jobs:
       # 5. Build APK
       - name: Build APK
         run: |
+          cd app/
           buildozer android debug
 
       # 6. Upload APK artifact
