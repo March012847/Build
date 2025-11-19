@@ -1,0 +1,44 @@
+name: Build APK
+
+on:
+  push:
+    branches:
+      - main  # or the branch you want to trigger builds
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout your repository
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      # 2. Set up Python
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'  # match your Buildozer project
+
+      # 3. Install Buildozer
+      - name: Install Buildozer and dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y python3-pip python3-setuptools git zip unzip openjdk-11-jdk \
+                              libncurses5 libstdc++6 libffi-dev libssl-dev
+          pip install --upgrade pip
+          pip install buildozer cython
+          cd app/
+          buildozer init
+
+      # 4. Run Buildozer
+      - name: Build APK
+        run: |
+          buildozer android debug
+          
+      # 5. Upload APK as artifact
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: my-app-apk
+          path: bin/*.apk
