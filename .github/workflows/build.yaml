@@ -18,33 +18,33 @@ jobs:
       run: |
         sudo apt update
         sudo apt install -y python3-pip python3-setuptools git zip unzip openjdk-11-jdk \
-                            libncurses6 libstdc++6 libffi-dev libssl-dev wget
-        pip install --upgrade cython buildozer
+                            libncurses6 libstdc++6 libffi-dev libssl-dev
+        pip install --upgrade cython buildozer spotdl
 
-    - name: Set up Android SDK/NDK
+    - name: Set up Android SDK (Buildozer path)
       run: |
-        mkdir -p $HOME/Android/Sdk/cmdline-tools
-        cd $HOME/Android/Sdk/cmdline-tools
+        export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
+        mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+        cd $ANDROID_SDK_ROOT/cmdline-tools
         wget https://dl.google.com/android/repository/commandlinetools-linux-9123335_latest.zip -O cmdline-tools.zip
         unzip cmdline-tools.zip
         mv cmdline-tools latest
         rm cmdline-tools.zip
 
-        export ANDROID_SDK_ROOT=$HOME/Android/Sdk
         export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
 
+        # Accept licenses
         yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses
 
+        # Install minimum SDK components including build-tools for aidl
         sdkmanager --sdk_root=$ANDROID_SDK_ROOT \
           "platform-tools" \
           "platforms;android-33" \
-          "build-tools;33.0.0" \
-          "ndk;25.2.9519653"
+          "build-tools;33.0.0"
 
-    - name: Build APK
+    - name: Initialize Buildozer & Build APK
       run: |
         cd app/
         buildozer init
         buildozer android debug \
-          android.sdk_path=$HOME/Android/Sdk \
-          android.ndk_path=$HOME/Android/Sdk/ndk/25.2.9519653
+          android.sdk_path=$HOME/.buildozer/android/platform/android-sdk
