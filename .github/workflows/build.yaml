@@ -4,13 +4,14 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repo
         uses: actions/checkout@v3
 
       - name: Install dependencies
@@ -20,13 +21,13 @@ jobs:
                               libncurses6 libstdc++6 libffi-dev libssl-dev wget
           pip install --upgrade cython buildozer
 
-      - name: Setup Android SDK
+      - name: Setup Android SDK & Build-tools
         run: |
-          # Create SDK directories
+          # Prepare directories
           mkdir -p $HOME/Android/Sdk/cmdline-tools
           cd $HOME/Android/Sdk/cmdline-tools
 
-          # Download latest command-line tools
+          # Download and install command-line tools
           wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
           unzip cmdline-tools.zip
           mv cmdline-tools latest
@@ -35,15 +36,15 @@ jobs:
           export ANDROID_SDK_ROOT=$HOME/Android/Sdk
           export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
           export PATH=$ANDROID_SDK_ROOT/platform-tools:$PATH
+          export PATH=$ANDROID_SDK_ROOT/build-tools/33.0.0:$PATH
 
           # Accept licenses
           yes | sdkmanager --licenses
 
-          # Install essential SDK components
+          # Install SDK components
           sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0"
 
       - name: Build APK
         run: |
           cd app/
-          buildozer init
           buildozer android debug
